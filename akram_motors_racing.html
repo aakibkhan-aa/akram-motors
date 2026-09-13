@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>AKRAM MOTORS - 3D Racing</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#111;color:white}
+#game{position:relative;width:100%;height:100%;background:linear-gradient(#77c7ff 0 35%,#69a83e 35% 100%)}
+#skyline{position:absolute;top:25%;left:0;width:100%;height:20%;opacity:.45;
+background:linear-gradient(90deg,transparent 0 5%,#555 5% 9%,transparent 9% 13%,#777 13% 19%,transparent 19% 24%,#444 24% 30%,transparent 30% 36%,#777 36% 42%,transparent 42% 48%,#555 48% 54%,transparent 54% 61%,#777 61% 68%,transparent 68% 75%,#555 75% 82%,transparent 82% 90%,#777 90% 96%,transparent 96%)}
+#road{position:absolute;left:50%;top:28%;transform:translateX(-50%);width:76%;height:76%;
+background:#333;clip-path:polygon(43% 0,57% 0,100% 100%,0 100%)}
+#road:before,#road:after{content:"";position:absolute;top:0;width:5px;height:100%;background:white;opacity:.8}
+#road:before{left:21%}.road:after{right:21%}
+.lane{position:absolute;left:50%;top:-10%;width:7px;height:25%;background:#eee;transform:translateX(-50%);opacity:.8;animation:move 1s linear infinite}
+.l2{animation-delay:.5s}.l3{top:45%;animation-delay:.2s}.l4{top:70%;animation-delay:.7s}
+@keyframes move{from{transform:translate(-50%,-40%)}to{transform:translate(-50%,220%)}}
+#hud{position:absolute;top:10px;left:0;right:0;display:flex;justify-content:space-around;z-index:5;text-shadow:2px 2px #000}
+.box{background:#111c;padding:8px 14px;border-radius:10px;font-weight:bold}
+#car{position:absolute;bottom:55px;left:50%;transform:translateX(-50%);width:74px;height:125px;z-index:4;transition:left .12s}
+.carbody{position:absolute;inset:8px 10px;border-radius:20px 20px 12px 12px;background:#d92323;border:3px solid #fff;box-shadow:0 0 18px #f22}
+.window{position:absolute;top:20px;left:17px;width:30px;height:38px;background:#182b42;border-radius:9px}
+.light{position:absolute;bottom:13px;width:12px;height:10px;background:#ffe66d;border-radius:4px}
+.leftlight{left:14px}.rightlight{right:14px}
+.wheel{position:absolute;width:10px;height:30px;background:#111;border-radius:5px;top:38px}
+.w1{left:0}.w2{right:0}.w3{left:0;bottom:28px;top:auto}.w4{right:0;bottom:28px;top:auto}
+#controls{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:25px;z-index:6}
+.ctrl{width:72px;height:55px;border:2px solid #fff;border-radius:14px;background:#111b;color:white;font-size:28px}
+#nitro{background:#ff8a00;color:#111;width:90px;font-size:16px}
+#start,#over{position:absolute;inset:0;background:#000b;z-index:10;display:flex;align-items:center;justify-content:center;text-align:center}
+.panel{background:#161616;border:1px solid #555;border-radius:20px;padding:28px;width:min(90%,400px)}
+h1{margin:0;color:#ff8a00;font-size:38px}
+button{border:0;border-radius:10px;padding:14px 28px;background:#ff8a00;color:#111;font-size:18px;font-weight:bold}
+#over{display:none}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="skyline"></div>
+  <div id="road">
+    <div class="lane"></div><div class="lane l2"></div><div class="lane l3"></div><div class="lane l4"></div>
+  </div>
+
+  <div id="hud">
+    <div class="box">🏁 Distance: <span id="distance">0</span> m</div>
+    <div class="box">⭐ Score: <span id="score">0</span></div>
+  </div>
+
+  <div id="car">
+    <div class="carbody"><div class="window"></div><div class="light leftlight"></div><div class="light rightlight"></div></div>
+    <div class="wheel w1"></div><div class="wheel w2"></div><div class="wheel w3"></div><div class="wheel w4"></div>
+  </div>
+
+  <div id="controls">
+    <button class="ctrl" id="left">⬅️</button>
+    <button class="ctrl" id="nitro">⚡ NITRO</button>
+    <button class="ctrl" id="right">➡️</button>
+  </div>
+
+  <div id="start">
+    <div class="panel">
+      <h1>AKRAM MOTORS</h1>
+      <p>🏎️ 3D-style Mobile Racing</p>
+      <p>Use ⬅️ ➡️ to steer and ⚡ Nitro to boost.</p>
+      <button onclick="startGame()">START RACE</button>
+    </div>
+  </div>
+
+  <div id="over">
+    <div class="panel">
+      <h1>RACE OVER</h1>
+      <p>Your score</p>
+      <h2 id="final" style="font-size:40px;color:#ff8a00">0</h2>
+      <button onclick="startGame()">RACE AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const car=document.getElementById("car");
+let x=50,score=0,distance=0,running=false,nitro=false,raf;
+
+function startGame(){
+  document.getElementById("start").style.display="none";
+  document.getElementById("over").style.display="none";
+  x=50;score=0;distance=0;running=true;nitro=false;
+  update();
+  cancelAnimationFrame(raf);
+  loop();
+}
+function update(){
+  car.style.left=x+"%";
+  document.getElementById("score").textContent=score;
+  document.getElementById("distance").textContent=Math.floor(distance);
+}
+function loop(){
+  if(!running)return;
+  distance+=nitro?1.7:.8;
+  score+=nitro?2:1;
+  update();
+  raf=requestAnimationFrame(loop);
+}
+function steer(dir){
+  if(!running)return;
+  x+=dir*(nitro?3:2);
+  x=Math.max(30,Math.min(70,x));
+  update();
+}
+document.getElementById("left").addEventListener("pointerdown",()=>steer(-1));
+document.getElementById("right").addEventListener("pointerdown",()=>steer(1));
+document.getElementById("nitro").addEventListener("pointerdown",()=>{nitro=true});
+document.getElementById("nitro").addEventListener("pointerup",()=>{nitro=false});
+document.getElementById("nitro").addEventListener("pointercancel",()=>{nitro=false});
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft")steer(-1);
+  if(e.key==="ArrowRight")steer(1);
+  if(e.key===" "){nitro=true;setTimeout(()=>nitro=false,700)}
+});
+</script>
+</body>
+</html>
